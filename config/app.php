@@ -183,6 +183,12 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
+
+        /*
+         * Custom Helper
+         */
+            'FunctionHelper' => App\Helpers\FormatHelper::class,
+
     ])->toArray(),
 
 ];

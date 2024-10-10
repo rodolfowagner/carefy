@@ -1,28 +1,32 @@
 @extends('layouts.layout_base')
 
 @section('content')
-<div class="container">
+<div class="container mb-5">
     <div class="row">
         <div class="col">
             <h1 class="fs-3 mb-3">Upload</h1>
             <div class="bg-white p-3 radius95">
                 
                 <div id="uploadON" class="mb-3">
-                    <h2 class="fs-5 border-bottom">Insira um arquivo CSV</h2>
-                    <input type="file" id="inputFile" accept=".csv">
+                    <label for="inputFile" class="form-label fw-bold ps-2">Carregue o arquivo CSV</label>
+                    <input class="form-control" type="file" id="inputFile">
                 </div>
 
                 <div id="uploadOFF" class="d-none">
-                    <div class="row mb-3">
-                        <div class="col-md-6 text-center text-md-start">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start mb-3">
                             <a href="{{ route('upload.index') }}" class="btn btn-lg btn-outline-success me-2"><i class="fa-solid fa-angle-left"></i></a>
-                            <button id="btn_validate" type="button" class="btn btn-lg btn-outline-success px-5">Validar dados <i class="fa-solid fa-check"></i></button>
+                            <button id="btn_validate" type="button" class="btn btn-lg btn-outline-success px-5"><i class="fa-solid fa-magnifying-glass"></i> Validar dados</button>
                         </div>
-                        <div class="col-md-6 text-center text-md-end">
+                        <div class="col-md-6 text-center text-md-end mb-3">
                             <button id="btn_save" type="button" class="btn btn-lg btn-success px-5">Salvar <i class="fa-solid fa-check"></i></button>
                         </div>
                     </div>
+
                     <div id="div_cards" class="row mb-3"></div>
+                    
+                    <p id="total" class="mt-3 text-center fw-bold"></p>
+
                 </div>
 
             </div>
@@ -63,23 +67,21 @@ $(document).ready(function()
             index_header.push(header.trim());
         });
         
-        lines.slice(1).forEach(function(line)
-        {
+        lines.slice(1).forEach(function(line) {
             if (line.trim() !== "") // Ignorar linhas em branco
             {
                 total ++;
                 var values = line.split(",");
                 var uuid = self.crypto.randomUUID();
 
-                html+= '<div class="col-sm-3 mb-3">';
-                html+= '<div class="card border-warning cardItem" data-uuid="' + uuid + '">';
+                html+= '<div class="col-md-6 col-md-4 col-lg-3 mb-3">';
+                html+= '<div class="card border-warning cardItem" id="card_' + uuid + '" data-uuid="' + uuid + '">';
                 html+= '<div class="card-header bg-warning"><i class="fa-solid fa-triangle-exclamation"></i> Pendente</div>';
                 html+= '<div class="card-body">';
                 
                 var item = new Object();
 
-                values.forEach(function(value, index)
-                {    
+                values.forEach(function(value, index) {
                     var type = index_header[index];
 
                     item.uuid = uuid;
@@ -116,6 +118,8 @@ $(document).ready(function()
                 });
 
                 var itemJson = JSON.stringify(item);
+
+                html += '<ul class="ul_errors p-2 mt-1 text-danger"></ul>';
                 
                 html += '<div class="d-none">'
                 html += '<input class="form-check-input" type="checkbox" value="1" name="item[is_valid][' + uuid + ']">';
@@ -133,23 +137,24 @@ $(document).ready(function()
         $("#div_cards").html(html);
         $("#uploadON").addClass('d-none');
         $("#uploadOFF").removeClass('d-none');
+        $("#total").html('<span class="text-warning">Total de ' + total + ' registros pendentes</span>');
         activeTooltip();
     }
 
-    $("#btn_validate").click(function(){
+    $("#btn_validate").click(function() {
         validateCards()
     });
 
     function validateCards()
     {
         var items = [];
+        $('.ul_errors').html('');
 
-        $('#div_cards .cardItem').each(function(rowIndex){
+        $('#div_cards .cardItem').each(function(index) {
             var uuid = $(this).data('uuid');
             var data = $(this).find("[name='item[data][" + uuid + "]']").val().trim();
-            var is_valid = $(this).find("[name='item[is_valid][" + uuid + "]']").prop('checked') ? true : false;
-
-            items.push(data)
+            // var is_valid = $(this).find("[name='item[is_valid][" + uuid + "]']").prop('checked') ? true : false;
+            items.push(data);
         });
 
         $.ajax({
@@ -160,10 +165,47 @@ $(document).ready(function()
             data:{'action':'validate',"items":items},
             success:function(response)
             {
-                return console.log(response)
-            },
-            error:function()
-            {
+                // valid_items
+                if (response['valid_items']) {
+                    $.each(response['valid_items'], function(k1, v1){
+                        var uuid = v1['uuid'];
+
+                        $("input[name='item[is_valid][" + uuid + "]").prop("checked", true);
+
+                        $("#card_" + uuid).removeClass('border-warning')
+                                            .addClass('border-success');
+                        
+                        $("#card_" + uuid).find('.card-header')
+                                            .removeClass('bg-warning')
+                                            .addClass('bg-success text-white').html('<i class="fa-solid fa-check"></i> Válido');
+                    });
+                }
+
+                // invalid_items
+                if (response['invalid_items']) {
+                    $.each(response['invalid_items'], function(k1, v1){
+                        var uuid = v1['uuid'];
+
+                        $("input[name='item[is_valid][" + uuid + "]").prop("checked", false);
+
+                        $("#card_" + uuid).removeClass('border-warning')
+                                            .addClass('border-danger');
+
+                        $("#card_" + uuid).find('.card-header')
+                                            .removeClass('bg-warning')
+                                            .addClass('bg-danger text-white').html('<i class="fa-solid fa-xmark"></i> Inválido');
+
+                        $.each(v1, function(k2, v2){
+                            if (k2 != "uuid")
+                                $("#card_" + uuid).find('.ul_errors').append('<li>' + v2 + '</li>')
+                        });
+                    });
+                }
+
+                // total
+                $('#total').html('<span class="text-success">Total de válidos ' + response['valid_total'] + ' </span><br><span class="text-danger">Total de inválidos ' + response['invalid_total'] + ' </span>');
+
+            }, error:function() {
                 console.log('Erro ao validar!');
             }
         });
