@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', function(){
+    return view('index');
 });
+
+Route::get('/upload', function(){
+    return view('upload');
+})->name('upload.index');
+
+Route::get('/upload/validate', function(){
+    return view('upload');
+})->name('upload.validate');
+
+Route::post('/upload/validate', [\App\Http\Controllers\UploadController::class, 'validateData'])->name('upload.validate');
