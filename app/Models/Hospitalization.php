@@ -9,7 +9,7 @@ class Hospitalization extends Model
 {
     use HasFactory;
 
-    public function store()
+    public function patient()
     {
         return $this->belongsTo(Patient::class);
     }

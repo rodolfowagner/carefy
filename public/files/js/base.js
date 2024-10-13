@@ -1,4 +1,15 @@
 
+function loadON()
+{
+    $("#load").fadeIn("fast")
+    if ("activeElement" in document)
+        document.activeElement.blur()
+}
+function loadOFF()
+{
+    $("#load").hide()
+}
+
 // Active tooltip bootstrap 5
     function activeTooltip()
     {

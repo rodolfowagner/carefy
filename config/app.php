@@ -187,7 +187,7 @@ return [
         /*
          * Custom Helper
          */
-            'FunctionHelper' => App\Helpers\FormatHelper::class,
+            'FormatHelper' => App\Helpers\FormatHelper::class,
 
     ])->toArray(),
 

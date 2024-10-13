@@ -15,21 +15,36 @@
                 <div id="uploadOFF" class="d-none">
                     <div class="row">
                         <div class="col-md-6 text-center text-md-start mb-3">
-                            <a href="{{ route('upload.index') }}" class="btn btn-lg btn-outline-success me-2"><i class="fa-solid fa-angle-left"></i></a>
-                            <button id="btn_validate" type="button" class="btn btn-lg btn-outline-success px-5"><i class="fa-solid fa-magnifying-glass"></i> Validar dados</button>
+                            <a href="{{ route('upload.index') }}" class="btn btn-lg btn-outline-success me-1"><i class="fa-solid fa-angle-left"></i></a>
+                            <button data-type="verify_table" type="button" class="btn btn-lg btn-outline-success px-4 mb-1 me-1 btn_action">Validar dados <i class="fa-solid fa-table"></i></button>
+                            {{-- <button data-type="verify_database" type="button" class="btn btn-lg btn-outline-success px-4 mb-1 btn_action">Verificar banco de dados <i class="fa-solid fa-database"></i></button> --}}
                         </div>
                         <div class="col-md-6 text-center text-md-end mb-3">
-                            <button id="btn_save" type="button" class="btn btn-lg btn-success px-5">Salvar <i class="fa-solid fa-check"></i></button>
+                            <button id="btn_submit" data-type="insert" type="button" class="btn btn-lg btn-success px-4 mb-1 btn_action">Salvar <i class="fa-solid fa-check"></i></button>
                         </div>
                     </div>
 
-                    <div id="div_cards" class="row mb-3"></div>
-                    
-                    <p id="total" class="mt-3 text-center fw-bold"></p>
+                    <form id="form_data">
+                        <div id="table_csv" class="table-responsive"></div>
+                        <input id="input_type" name="type" type="hidden" readonly="readonly">
+                    </form>
+
+                    <p id="total" class="text-center fw-bold"></p>
 
                 </div>
 
             </div>
+
+            <div class="mt-4 fs-7">
+                <strong>Informações</strong>
+                <p class="m-0">
+                    A validação é feita em 2 etapas
+                    <br>1° Comparação entre as linhas da <i class="fa-solid fa-table"></i> tabela.
+                    <br>2° Verificação com <i class="fa-solid fa-database"></i> banco de dados.
+                    <br>Carregue o arquivo para iniciar.
+                </p>
+            </div>
+
         </div>
     </div>
 </div>
@@ -49,169 +64,177 @@ $(document).ready(function()
             var reader = new FileReader();
             reader.onload = function(e){
                 var csvData = e.target.result;
-                loadItems(csvData);
+                createTable(csvData);
             };
             reader.readAsText(file);
         }
     });
 
-    function loadItems(csvData)
+    function createTable(csvData)
     {
-        var total = 0;
+        var id_auto = 0;
         var lines = csvData.split("\n");
         var headers = lines[0].split(",");
         var index_header = [];
-        var html = '';
+        var tableHtml = '';
 
-        headers.forEach(function(header) {
-            index_header.push(header.trim());
-        });
-        
+        tableHtml+= ''
+        + '<table class="table table-striped">'
+            + '<thead class="text-uppercase">'
+                + '<tr>';
+                    headers.forEach(function(header) {
+                        index_header.push(header.trim());
+                        switch (header.trim()) {
+                            case 'nome':
+                                title = 'Paciente';
+                                break;
+                            case 'nascimento':
+                                title = 'Nascimento';
+                                break;
+                            case 'codigo':
+                                title = 'Cód beneficiário';
+                                break;
+                            case 'guia':
+                                title = 'Cód Guia';
+                                break;
+                            case 'entrada':
+                                title = 'Data entrada';
+                                break;
+                            case 'saida':
+                                title = 'Data saída';
+                                break;
+                        }
+                        tableHtml+= '<th class="text-center">' + title + '</th>';
+                    });
+                    tableHtml+= '<th width="450">Status</th>';
+                    tableHtml+= ''
+                + '</tr>'
+            + '</thead>'
+            + '<tbody>';
+
+        var html = ""
+
         lines.slice(1).forEach(function(line) {
-            if (line.trim() !== "") // Ignorar linhas em branco
-            {
-                total ++;
+            if (line.trim() !== "") {
+
+                id_auto++;
                 var values = line.split(",");
-                var uuid = self.crypto.randomUUID();
+                var dataItem = "";
 
-                html+= '<div class="col-md-6 col-md-4 col-lg-3 mb-3">';
-                html+= '<div class="card border-warning cardItem" id="card_' + uuid + '" data-uuid="' + uuid + '">';
-                html+= '<div class="card-header bg-warning"><i class="fa-solid fa-triangle-exclamation"></i> Pendente</div>';
-                html+= '<div class="card-body">';
-                
-                var item = new Object();
+                tableHtml+= ''
+                + '<tr id="tr_' + id_auto + '" class="tr_class">'
+                    
+                    values.forEach(function(value, index) {
+                        var type = index_header[index];
+                        tableHtml+= '<td><input name="input[' + type + '][' + id_auto + ']" type="text" class="form-control form-control-sm form-control-custom" value="' + value.trim() + '"></td>';
+                    });
 
-                values.forEach(function(value, index) {
-                    var type = index_header[index];
-
-                    item.uuid = uuid;
-
-                    switch (type)
-                    {
-                        case 'nome':
-                            html+= '<h5 class="card-title mb-0" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Paciente"><i class="fa-solid fa-user"></i> ' + value.trim() + '</h5>';
-                            item.nome = value.trim();
-                            break;
-                        case 'nascimento':
-                            html+= '<div data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Data de nascimento"><i class="fa-solid fa-cake-candles"></i> ' + value.trim() + '</div>';
-                            item.nascimento = value.trim();
-                            break;
-                        case 'codigo':
-                            html+= '<div data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Código do Paciente"><i class="fa-solid fa-fingerprint"></i> ' + value.trim() + '</div>';
-                            item.codigo = value.trim();
-                            break;
-                        case 'guia':
-                            html+= '<div data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Código da Guia de Internação"><i class="fa-solid fa-file-pen"></i> ' + value.trim() + '</div>';
-                            item.guia = value.trim();
-                            break;
-                        case 'entrada':
-                            html+= '<div data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Data de admissão (entrada) da internação"><i class="fa-solid fa-person-arrow-down-to-line"></i> ' + value.trim() + '</div>';
-                            item.entrada = value.trim();
-                            break;
-                        case 'saida':
-                            html+= '<div data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Data de alta (saída) da internação"><i class="fa-solid fa-person-arrow-up-from-line"></i> ' + value.trim() + '</div>';
-                            item.saida = value.trim();
-                            break;
-                        default: 
-                            html+= "---";
-                    }
-                });
-
-                var itemJson = JSON.stringify(item);
-
-                html += '<ul class="ul_errors p-2 mt-1 text-danger"></ul>';
-                
-                html += '<div class="d-none">'
-                html += '<input class="form-check-input" type="checkbox" value="1" name="item[is_valid][' + uuid + ']">';
-                html += "<input type='text' name='item[data][" + uuid + "]' value='"+ itemJson +"'>";
-                html += '</div>';
-                
-                html += '</div>';
-                html += '</div>';
-                html += '</div>';
-                
-                // console.log(item);
+                    tableHtml+= ''
+                    + '<td>'
+                        // + '<span class="badge text-bg-warning">Pendente</span>'
+                        + '<ul id="ul_table_errors_' + id_auto + '" class="ul_errors text-danger"></ul>'
+                        + '<ul id="ul_database_errors_' + id_auto + '" class="ul_errors text-danger"></ul>'
+                        +'<div class="d-none">'
+                            + '<input name="id_auto[]" type="hidden" readonly="readonly" class="form-control form-control-sm form-control-custom" value="' + id_auto + '">'
+                            + '<input type="checkbox" value="1" name="input[is_valid][' + id_auto + ']" class="checkbox_valid">'
+                        + '</div>'
+                    + '<td>'
+                + '</tr>';
             }
         });
 
-        $("#div_cards").html(html);
+        tableHtml+= ''
+            + '</tbody>'
+        + '</table>';
+
+        $('#table_csv').html(tableHtml);
         $("#uploadON").addClass('d-none');
         $("#uploadOFF").removeClass('d-none');
-        $("#total").html('<span class="text-warning">Total de ' + total + ' registros pendentes</span>');
-        activeTooltip();
+        $("#total").html('<span class="text-warning">Total de ' + id_auto + ' registros pendentes</span>');
     }
 
-    $("#btn_validate").click(function() {
-        validateCards()
+    $(".btn_action").click(function()
+    {
+        var type = $(this).data('type');
+        $("#input_type").val(type);
+
+        if (type == 'insert' && $(".checkbox_valid:checked").length <= 0)
+            return alert('Não há linhas válidas para inserir.');
+
+        $("#form_data").submit();
     });
 
-    function validateCards()
-    {
-        var items = [];
+    $("#form_data").submit(function(e){
+        e.preventDefault();
+        
         $('.ul_errors').html('');
-
-        $('#div_cards .cardItem').each(function(index) {
-            var uuid = $(this).data('uuid');
-            var data = $(this).find("[name='item[data][" + uuid + "]']").val().trim();
-            // var is_valid = $(this).find("[name='item[is_valid][" + uuid + "]']").prop('checked') ? true : false;
-            items.push(data);
-        });
+        $('.table tbody tr').removeClass();
+        $('#total').html('');
 
         $.ajax({
             headers:{'X-CSRF-TOKEN':$('meta[name="csrftoken"]').attr('content')},
             method:'POST',
-            url:"{{ route('upload.validate') }}",
+            url:"{{ route('upload.post') }}",
             cache:false,
-            data:{'action':'validate',"items":items},
-            success:function(response)
-            {
-                // valid_items
-                if (response['valid_items']) {
-                    $.each(response['valid_items'], function(k1, v1){
-                        var uuid = v1['uuid'];
+            timeout:15000,
+            data:$(this).serialize(),
+            beforeSend:function(){loadON()},
+            complete:function(){loadOFF()},
+            success:function(response){
 
-                        $("input[name='item[is_valid][" + uuid + "]").prop("checked", true);
+                if (response['total'] && response['total'] > 0)
+                    return window.location.href = '/';
 
-                        $("#card_" + uuid).removeClass('border-warning')
-                                            .addClass('border-success');
-                        
-                        $("#card_" + uuid).find('.card-header')
-                                            .removeClass('bg-warning')
-                                            .addClass('bg-success text-white').html('<i class="fa-solid fa-check"></i> Válido');
-                    });
-                }
-
-                // invalid_items
-                if (response['invalid_items']) {
-                    $.each(response['invalid_items'], function(k1, v1){
-                        var uuid = v1['uuid'];
-
-                        $("input[name='item[is_valid][" + uuid + "]").prop("checked", false);
-
-                        $("#card_" + uuid).removeClass('border-warning')
-                                            .addClass('border-danger');
-
-                        $("#card_" + uuid).find('.card-header')
-                                            .removeClass('bg-warning')
-                                            .addClass('bg-danger text-white').html('<i class="fa-solid fa-xmark"></i> Inválido');
-
-                        $.each(v1, function(k2, v2){
-                            if (k2 != "uuid")
-                                $("#card_" + uuid).find('.ul_errors').append('<li>' + v2 + '</li>')
+                if (response['table']['validate'])
+                {
+                    if (response['table']['result_success'])
+                    {
+                        $.each(response['table']['result_success'], function(k, id_auto){
+                            $("#tr_" + id_auto).addClass('table-success');
+                            $("input[name='input[is_valid][" + id_auto + "]").prop("checked", true);
                         });
-                    });
+                    }
+                    
+                    if (response['table']['result_error'])
+                    {
+                        $.each(response['table']['result_error'], function(k1, v1){
+                            $("#tr_" + v1['id_auto']).addClass('table-danger');
+                            $("input[name='input[is_valid][" + v1['id_auto'] + "]").prop("checked", false);
+                            $.each(v1['errors'], function(k2, v2){
+                                $("#ul_table_errors_" + v1['id_auto']).append('<li data-bs-toggle="tooltip" data-bs-title="Erro na verificação da tabela"><i class="fa-solid fa-table"></i> ' + v2 + '</li>');
+                            });
+                        });
+                    }
+                    $('#total').append('<span class="text-success">Válidos: ' + response['table']['result_success_total'] + ' </span> <i class="fa-solid fa-table"></i> <span class="text-danger">Inválidos: ' + response['table']['result_error_total'] + ' </span>');
                 }
 
-                // total
-                $('#total').html('<span class="text-success">Total de válidos ' + response['valid_total'] + ' </span><br><span class="text-danger">Total de inválidos ' + response['invalid_total'] + ' </span>');
-
-            }, error:function() {
-                console.log('Erro ao validar!');
+                if (response['database']['validate'])
+                {
+                    if (response['database']['result_success'])
+                    {
+                        $.each(response['database']['result_success'], function(k, id_auto){
+                            $("#tr_" + id_auto).addClass('table-success');
+                            $("input[name='input[is_valid][" + id_auto + "]").prop("checked", true);
+                        });
+                    }
+                    
+                    if (response['database']['result_error'])
+                    {
+                        $.each(response['database']['result_error'], function(k1, v1){
+                            $("#tr_" + v1['id_auto']).addClass('table-danger');
+                            $("input[name='input[is_valid][" + v1['id_auto'] + "]").prop("checked", false);
+                            $.each(v1['errors'], function(k2, v2){
+                                $("#ul_table_errors_" + v1['id_auto']).append('<li data-bs-toggle="tooltip" data-bs-title="Erro na verificação com banco de dados"><i class="fa-solid fa-database"></i> ' + v2 + '</li>');
+                            });
+                        });
+                    }
+                    $('#total').append('<hr><span class="text-success">Válidos: ' + response['database']['result_success_total'] + ' </span> <i class="fa-solid fa-database"></i> <span class="text-danger">Inválidos: ' + response['database']['result_error_total'] + ' </span>');
+                }
+                activeTooltip();
             }
         });
-
-    }
-
+    });
+    
 });
 </script>
 @endpush

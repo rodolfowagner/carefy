@@ -13,16 +13,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function(){
-    return view('index');
-});
+Route::get('/', [\App\Http\Controllers\IndexController::class, 'index'])->name('home');
 
 Route::get('/upload', function(){
     return view('upload');
 })->name('upload.index');
 
-Route::get('/upload/validate', function(){
-    return view('upload');
-})->name('upload.validate');
-
-Route::post('/upload/validate', [\App\Http\Controllers\UploadController::class, 'validateData'])->name('upload.validate');
+Route::post('upload', [\App\Http\Controllers\UploadController::class, 'upload'])->name('upload.post');
+Route::resource('pacientes', \App\Http\Controllers\PatientController::class, ['names' => 'patients'])->parameters(['pacientes' => 'patients']);
+Route::resource('internamentos', \App\Http\Controllers\HospitalizationController::class, ['names' => 'hospitalizations'])->parameters(['internamentos' => 'hospitalizations']);
+Route::get('delete', [\App\Http\Controllers\UploadController::class, 'deleteAll'])->name('upload.delete');
