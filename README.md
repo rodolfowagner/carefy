@@ -6,7 +6,7 @@ URL do projeto para
 
 ## Funcionamento
 Aplicação relacionada ao cadastro de censo hospitalar, realizado por meio do upload de um arquivo no formato CSV seguindo este padrão:
-- [https://carefy.midiaart.com.br/files/public/data.csv](https://carefy.midiaart.com.br/files/public/data.csv).
+- [https://carefy.midiaart.com.br/files/data/data.csv](https://carefy.midiaart.com.br/files/public/data.csv).
 
 Após o upload, uma tabela será gerada contendo todas as informações para que sejam vizualizadas, editadas se necessário e validadas.
 
